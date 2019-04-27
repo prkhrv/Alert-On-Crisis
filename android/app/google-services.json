@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "109477341545",
+    "firebase_url": "https://alert-on-crises.firebaseio.com",
+    "project_id": "alert-on-crises",
+    "storage_bucket": "alert-on-crises.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:109477341545:android:e46ed4bf794a6d13",
+        "android_client_info": {
+          "package_name": "com.example.alert_on_crises"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "109477341545-74b9tjgt3g9osvf390fnvgq7a1stfe9m.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCRtLEnSHcn1B2m_HA4owpIIOIGvDBJ_yw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "109477341545-74b9tjgt3g9osvf390fnvgq7a1stfe9m.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,47 @@
+name: alert_on_crises
+description: A new Flutter project.
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^0.11.3+16
+  shared_preferences: 0.4.3
+  local_auth: 0.4.0+1
+  cupertino_icons: ^0.1.0
+  camera: 0.4.3+2
+  device_info: 0.4.0+1
+  path_provider: 0.4.1
+  date_format: ^1.0.6
+  random_string: ^0.0.2
+  url_launcher: 4.1.0+1
+  location: ^2.3.2
+  uuid: "^1.0.0"
+  permission_handler: 3.0.0
+  firebase_storage: 2.1.0+1
+  firebase_core:
+  firebase_auth:
+  dio:
+
+flutter_icons:
+  image_path: "./lib/app/assets/appLogo.png" 
+  android: true
+  ios: true
+  #location: 1.4.0
+dev_dependencies:
+  flutter_launcher_icons: "^0.6.1"
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
+  assets:
+    - lib/app/assets/logo.png
+    - lib/app/assets/usericon.png
+    - lib/app/assets/fingerprint.png
+    - lib/app/assets/location-icon.png
+    - lib/app/assets/911.png
+    - lib/app/assets/mark-injured.png
+    - lib/app/assets/safe-icon.png
+    - lib/app/assets/distress_screen_icon.png
+    - lib/app/assets/service-desk.png
+    - lib/app/assets/appLogo.png
