@@ -18,6 +18,7 @@ import 'package:local_auth/error_codes.dart' as auth_error;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:uuid/uuid.dart';
+import 'package:http/http.dart' as http;
 
 import 'dart:io' show Platform;
 
@@ -45,6 +46,7 @@ class _DistressAlertScreenState extends State<DistressAlertScreen> {
   bool cameraGot = false;
   int _counter = 15;
   bool _buttonPressed = false;
+  bool _isNowRecording = false;
   bool _loopActive = false;
   String _isVideoRecorded = 'false';
   String _is911Called = 'false';
@@ -144,7 +146,7 @@ class _DistressAlertScreenState extends State<DistressAlertScreen> {
       authenticated = await auth.authenticateWithBiometrics(
         useErrorDialogs: false,
         localizedReason: 'Scan your fingerprint to authenticate',
-        stickyAuth: false
+        stickyAuth: true,
       );
     } on PlatformException catch (e) {
       print(e);
@@ -170,6 +172,7 @@ class _DistressAlertScreenState extends State<DistressAlertScreen> {
     if (authenticated) {
       setState(() {
         _isFingerprint = true;
+        _isNowRecording = false;
 
         _fingerprintAuthText = 'Scan your fingerprint to authenticate';
         _canShowMarkedSafeOverlay = false;
@@ -180,8 +183,8 @@ class _DistressAlertScreenState extends State<DistressAlertScreen> {
     else{
       setState(() {
         _fingerprintAuthText = 'Fingerprint authentication failed, please try again';
+        _isNowRecording = false;
       });
-      biometrics();                                  
 
     }
   }
@@ -208,7 +211,7 @@ class _DistressAlertScreenState extends State<DistressAlertScreen> {
   }
 
   _fetchExitDirectionsAndOverlayMessage() async {
-    while(_distressCallSafeStatus == null){
+    while(_distressCallSafeStatus == null || _isNowRecording == true){
       var responseJson = await NetworkUtils.getDistressRecord(
         _authToken, _distressId.toString()
       );
@@ -234,39 +237,93 @@ class _DistressAlertScreenState extends State<DistressAlertScreen> {
           });
         }
       }
-      await Future.delayed(Duration(milliseconds: 2000));
+      await Future.delayed(Duration(milliseconds: 8000));
     }
   }
 
-  _mark911Called() async {
+//  _mark911Called() async {
+//    bool mark911Called = false;
+//    while(!mark911Called){
+//      var now = formatDate(DateTime.now().toUtc(), [yyyy, '-', mm, '-', dd, ' ', HH, ':', nn, ':', ss]);
+//      var responseJson = await NetworkUtils.updateDistressAlert(
+//        _authToken, _distressId.toString(), '', '', '', 'User has attempted emergency call', now.toString(), '', '', _getApiValueForUserInjuryStatus()
+//      );
+//      print(responseJson);
+//      if(responseJson['success']) {
+//        mark911Called = true;
+//      }
+//      await Future.delayed(Duration(milliseconds: 200));
+//    }
+//  }
+
+  _mark911Called() async{
+
     bool mark911Called = false;
-    while(!mark911Called){
-      var now = formatDate(DateTime.now().toUtc(), [yyyy, '-', mm, '-', dd, ' ', HH, ':', nn, ':', ss]);
-      var responseJson = await NetworkUtils.updateDistressAlert(
-        _authToken, _distressId.toString(), '', '', '', 'User has attempted emergency call', now.toString(), '', '', _getApiValueForUserInjuryStatus()
-      );
-      print(responseJson);
-      if(responseJson['success']) {
-        mark911Called = true;
+
+    var now = formatDate(DateTime.now().toUtc(), [yyyy, '-', mm, '-', dd,' ', HH,':', nn,':', ss]);
+    http.Response response = await http.post(Uri.encodeFull("http://community.sellacious.com/index.php?option=com_distressalert&task=distress.update&format=json"),
+      headers:{
+        "Accept": "application/json",
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body: {
+        "token":_authToken,
+        "distress_id": _distressId.toString(),
+        "distress_notes": 'User has attempted emergency call',
+        "emergency_call": now.toString(),
+
       }
-      await Future.delayed(Duration(milliseconds: 200));
+
+    );
+    print(response.body);
+    if(response.statusCode == 200){
+      mark911Called = true;
     }
+    print(now.toString());
+
   }
 
-  _markServiceDeskCalled() async {
+  _markServiceDeskCalled() async{
     bool markServiceDeskCalled = false;
-    while(!markServiceDeskCalled){
-      var now = formatDate(DateTime.now().toUtc(), [yyyy, '-', mm, '-', dd, ' ', HH, ':', nn, ':', ss]);
-      var responseJson = await NetworkUtils.updateDistressAlert(
-        _authToken, _distressId.toString(), '', '', '', 'User has attempted service desk call', '', now.toString(), '', _getApiValueForUserInjuryStatus()
-      );
-      print(responseJson);
-      if(responseJson['success']) {
-        markServiceDeskCalled = true;
-      }
-      await Future.delayed(Duration(milliseconds: 200));
+    var now = formatDate(DateTime.now().toUtc(), [yyyy, '-', mm, '-', dd, ' ', HH, ':', nn, ':', ss]);
+    http.Response response = await http.post(Uri.encodeFull("http://community.sellacious.com/index.php?option=com_distressalert&task=distress.update&format=json"),
+        headers:{
+          "Accept": "application/json",
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: {
+          "token":_authToken,
+          "distress_id": _distressId.toString(),
+          "distress_notes": 'User has attempted service desk call',
+          "security_desk_call": now.toString(),
+
+        }
+
+    );
+    print(response.body);
+    if(response.statusCode == 200){
+      markServiceDeskCalled = true;
     }
+    print(now.toString());
+
   }
+
+
+
+//  _markServiceDeskCalled() async {
+//    bool markServiceDeskCalled = false;
+//    while(!markServiceDeskCalled){
+//      var now = formatDate(DateTime.now().toUtc(), [yyyy, '-', mm, '-', dd, ' ', HH, ':', nn, ':', ss]);
+//      var responseJson = await NetworkUtils.updateDistressAlert(
+//        _authToken, _distressId.toString(), '', '', '', 'User has attempted service desk call', '', now.toString(), '', _getApiValueForUserInjuryStatus()
+//      );
+//      print(responseJson);
+//      if(responseJson['success']) {
+//        markServiceDeskCalled = true;
+//      }
+//      await Future.delayed(Duration(milliseconds: 200));
+//    }
+//  }
 
   _sendUserLocationUpdates() async {
     while(_distressId != null){
@@ -584,6 +641,8 @@ class _DistressAlertScreenState extends State<DistressAlertScreen> {
     }
   }
 
+
+
   @override
   void dispose() {
     controller?.dispose();
@@ -593,6 +652,8 @@ class _DistressAlertScreenState extends State<DistressAlertScreen> {
   @override
   Widget build(BuildContext context) {
     _screenHeight = MediaQuery.of(context).size.height;
+    final size = MediaQuery.of(context).size;
+    final deviceRatio = size.width / size.height;
     return new AspectRatio(
       key: _scaffoldKey,
 
@@ -606,6 +667,8 @@ class _DistressAlertScreenState extends State<DistressAlertScreen> {
             GestureDetector(
               onLongPress: (){
                 _buttonPressed = true;
+                _isNowRecording = true;
+
                 _decreaseCounterWhilePressed();
                 if(!_isDistressCallSent){
                   _sendDistressAlert();
@@ -662,8 +725,8 @@ class _DistressAlertScreenState extends State<DistressAlertScreen> {
                                     setState((){
                                       _canShowInjuredOverlay = true;
                                     });
-                                    
-                                    
+
+
                                   }
                                 },
                                 child: null
@@ -739,7 +802,7 @@ class _DistressAlertScreenState extends State<DistressAlertScreen> {
                               )
                             )
                           ),
-                          
+
                           SizedBox(height: _screenHeight*0.06),
                           Material(
                             color: Colors.transparent,
@@ -751,6 +814,7 @@ class _DistressAlertScreenState extends State<DistressAlertScreen> {
                               child: InkWell(
                                 onTap: (){
                                   setState(() {
+
                                     _canShowMarkedSafeOverlay = true;
                                     biometrics();
                                   });
@@ -778,49 +842,86 @@ class _DistressAlertScreenState extends State<DistressAlertScreen> {
                     child: Container(
                       color: Color.fromRGBO(00, 00, 00, 0.7),
                       child:Align(
-                        alignment: Alignment.topCenter,
+                        alignment: Alignment.topLeft,
                         child: Padding(
                           padding: EdgeInsets.symmetric(vertical: 8, horizontal: 9),
-                          child: Column(
+                          child: _isNowRecording == true ? Column(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.max,
                             children: <Widget>[
                               SizedBox(height: 30.0),
                               Row(
-                                children: <Widget>[
-                                  Image.asset(
-                                    'lib/app/assets/location-icon.png',
-                                    height: 30.0,
-                                    width: 30.0,
-                                  ),
-                                  Padding(
-                                    padding: EdgeInsets.only(left: 10),
-                                    child: Material(
-                                      type:MaterialType.transparency,
-                                      child: Text(
-                                        _locationSentText(),
-                                        style:TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 15.0,
+                                  children: <Widget>[
+                                    Image.asset(
+                                      'lib/app/assets/location-icon.png',
+                                      height: 30.0,
+                                      width: 30.0,
+                                    ),
+                                    Padding(
+                                        padding: EdgeInsets.only(left: 10),
+                                        child: Material(
+                                            type:MaterialType.transparency,
+                                            child: Text(
+                                                _locationSentText(),
+                                                style:TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 15.0,
+                                                )
+                                            )
                                         )
-                                      )
                                     )
-                                  )
-                                ]
+                                  ]
                               ),
-
-                              SizedBox(height: _screenHeight*0.08),
+                              SizedBox(height: _screenHeight*0.09),
+                              new Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: <Widget>[
+                                  _isNowRecording == true? Row(
+                                      mainAxisAlignment: MainAxisAlignment.start,
+                                      children: <Widget>[
+                                        Material(
+                                            type: MaterialType.transparency,
+                                            child:Align(
+                                                alignment: Alignment.bottomRight,
+                                                child: Text(
+                                                    _distressCallRequestStatus,
+                                                    textAlign: TextAlign.justify,
+                                                    style:TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 14.0
+                                                    )
+                                                )
+                                            )
+                                        ),
+                                      ]
+                                  ):
+                            Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: <Widget>[
+                              Image.asset(
+                                'lib/app/assets/distress_screen_icon.png',
+                                height: 70.0,
+                                width: 70.0,
+                              ),
                               Material(
-                                type: MaterialType.transparency,
-                                child:Align(
-                                  alignment: Alignment.topLeft,
-                                  child: Text(
-                                    _distressCallRequestStatus,
-                                    textAlign: TextAlign.left,
-                                    style:TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 15.0
-                                    )
+                                  type: MaterialType.transparency,
+                                  child:Align(
+                                      alignment: Alignment.bottomRight,
+                                      child: Text(
+                                          _distressCallRequestStatus,
+                                          textAlign: TextAlign.justify,
+                                          style:TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 15.0
+                                          )
+                                      )
                                   )
-                                )
+                              ),
+                            ]
+                        ),
+                                ],
+
                               ),
                               _isVideoRecorded == 'true' ? Material(
                                 type: MaterialType.transparency,
@@ -906,75 +1007,35 @@ class _DistressAlertScreenState extends State<DistressAlertScreen> {
                                   )
                                 )
                               ) : new Container(width: 0, height: 0),
-                              SizedBox(height: 20),
+                              SizedBox(height: 50),
                               Material(
                                 type: MaterialType.transparency,
                                 child: Align(
                                   alignment: Alignment.bottomLeft,
                                   child: Container(
-                                    
+
                                     height: 100,
                                     padding: EdgeInsets.symmetric(vertical: 10.0),
-                                    child: _chatMessageFromServer != null ? Text(
-                                      _chatMessageFromServer,
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 25.0
-                                      ) 
-                                    ) : new Container(height: 0, width: 0)
+                                    child: _chatMessageFromServer != null ? new Scrollbar(child: new SingleChildScrollView(
+                                      child: Text(
+                                          _chatMessageFromServer,
+                                          style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 25.0
+                                          )
+                                      ) ,
+                                    )
+                                    )   : new Container(height: 0, width: 0)
                                   )
                                 )
                               ),
                               SizedBox(height: 10),
-                              
-                              Material(
-                                type: MaterialType.transparency,
-                                child: Align(
-                                  alignment: Alignment.topLeft,
-                                  child: Container(
-                                    height: 50,
-                                    padding: EdgeInsets.symmetric(vertical: 10.0),
-                                    child: _evacuationDirections != null ? Text(
-                                      _evacuationDirections,
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 18.0
-                                      ) 
-                                    ) : new Container(height: 0, width: 0)
-                                  )
-                                )
-                              ),
 
-                              SizedBox(height: 40.0),
-                              _isVideoRecorded == 'false' ? Material(
-                                type: MaterialType.transparency,
-                                child: Align(
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    _recordVideoText,
-                                    textAlign: TextAlign.left,
-                                    style:TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 25.0
-                                    )
-                                  )
-                                )
-                              ) : new Container(height: 0, width: 0),
+
+
+
                               SizedBox(height: 10),
-                              _isVideoRecorded == 'false' ? Material(
-                                type: MaterialType.transparency,
-                                child: Align(
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    '$_counter',
-                                    textAlign: TextAlign.left,
-                                    style:TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 40.0
-                                    )
-                                  )
-                                )
-                              ) : new Container(height: 0, width: 0),
+
                               SizedBox(height: 10),
                               _retryVideoRecord != null ? Material(
                                 type: MaterialType.transparency,
@@ -990,8 +1051,230 @@ class _DistressAlertScreenState extends State<DistressAlertScreen> {
                                   )
                                 )
                               ) : new Container(height: 0, width: 0),
+                              SizedBox(height: 40.0),
+
+                              new Padding(padding: EdgeInsets.symmetric(vertical: 45.0)),
+                              _isVideoRecorded == 'false' ? Material(
+                                  type: MaterialType.transparency,
+                                  child: Align(
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                          _recordVideoText,
+                                          textAlign: TextAlign.center,
+                                          style:TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 25.0
+                                          )
+                                      )
+                                  )
+                              ) : new Container(height: 0, width: 0),
+
+                              _isVideoRecorded == 'false' ? Material(
+                                  type: MaterialType.transparency,
+                                  child: Align(
+                                    alignment: Alignment.center,
+                                    child: new Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: <Widget>[
+                                        new Icon(Icons.timer,size: 30.0,color: Colors.white,),
+                                        Text(
+                                            '$_counter',
+                                            textAlign: TextAlign.right,
+                                            style:TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 30.0
+                                            )
+                                        )
+                                      ],
+
+                                    ),
+                                  )
+                              ) : new Container(height: 0, width: 0),
+                              _evacuationDirections != null? Material(
+                                  type: MaterialType.transparency,
+                                  child: Align(
+                                      alignment: Alignment.bottomLeft,
+                                      child: Container(
+                                          height: 100,
+                                          padding: EdgeInsets.symmetric(vertical: 10.0),
+                                          child: _evacuationDirections != null ?new Scrollbar(child: new SingleChildScrollView(
+                                            child: Text(
+                                                _evacuationDirections,
+                                                style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 18.0
+                                                )
+                                            ) ,
+                                          )
+                                          )   : new Container(height: 0, width: 0)
+                                      )
+                                  )
+                              ):new Container(height: 0,width: 0,),
                             ],
-                          )
+                          ): Column(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+
+                              _isVideoRecorded == 'true' ? Material(
+                                  type: MaterialType.transparency,
+                                  child: Align(
+                                      alignment: Alignment.topLeft,
+                                      child: Text(
+                                          'Video recorded successfully ...',
+                                          textAlign: TextAlign.left,
+                                          style:TextStyle(
+                                              color: Colors.yellowAccent,
+                                              fontSize: 15.0
+                                          )
+                                      )
+                                  )
+                              ) : new Container(width: 0, height: 0),
+                              _videoUploadStatus != null ? Material(
+                                  type: MaterialType.transparency,
+                                  child: Align(
+                                      alignment: Alignment.topLeft,
+                                      child: Text(
+                                          _videoUploadStatus,
+                                          textAlign: TextAlign.left,
+                                          style:TextStyle(
+                                              color: Colors.yellowAccent,
+                                              fontSize: 15.0
+                                          )
+                                      )
+                                  )
+                              ) : new Container(width: 0, height: 0),
+                              _is911Called == 'true' ? Material(
+                                  type: MaterialType.transparency,
+                                  child: Align(
+                                      alignment: Alignment.topLeft,
+                                      child: Text(
+                                          'You have called 911 ...',
+                                          textAlign: TextAlign.left,
+                                          style:TextStyle(
+                                              color: Colors.yellowAccent,
+                                              fontSize: 15.0
+                                          )
+                                      )
+                                  )
+                              ) : new Container(width: 0, height: 0),
+                              _isServiceDeskCalled == 'true' ? Material(
+                                  type: MaterialType.transparency,
+                                  child: Align(
+                                      alignment: Alignment.topLeft,
+                                      child: Text(
+                                          'You have called Service Desk ...',
+                                          textAlign: TextAlign.left,
+                                          style:TextStyle(
+                                              color: Colors.yellowAccent,
+                                              fontSize: 15.0
+                                          )
+                                      )
+                                  )
+                              ) : new Container(width: 0, height: 0),
+                              _distressCallInjuredStatus != null ? Material(
+                                  type: MaterialType.transparency,
+                                  child: Align(
+                                      alignment: Alignment.topLeft,
+                                      child: Text(
+                                          _distressCallInjuredStatus,
+                                          textAlign: TextAlign.left,
+                                          style:TextStyle(
+                                              color: Colors.yellowAccent,
+                                              fontSize: 15.0
+                                          )
+                                      )
+                                  )
+                              ) : new Container(width: 0, height: 0),
+                              _distressCallSafeStatus != null ? Material(
+                                  type: MaterialType.transparency,
+                                  child: Align(
+                                      alignment: Alignment.topLeft,
+                                      child: Text(
+                                          _distressCallSafeStatus,
+                                          textAlign: TextAlign.left,
+                                          style:TextStyle(
+                                              color: Colors.yellowAccent,
+                                              fontSize: 15.0
+                                          )
+                                      )
+                                  )
+                              ) : new Container(width: 0, height: 0),
+                              SizedBox(height: 20),
+                              Material(
+                                  type: MaterialType.transparency,
+                                  child: Align(
+                                      alignment: Alignment.bottomLeft,
+                                      child: Container(
+
+                                          height: 0,
+                                          padding: EdgeInsets.symmetric(vertical: 10.0),
+                                          child: _chatMessageFromServer != null ? new Scrollbar(child: new SingleChildScrollView(
+                                            child: Text(
+                                                _chatMessageFromServer,
+                                                style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 25.0
+                                                )
+                                            ) ,
+                                          )
+                                          )   : new Container(height: 0, width: 0)
+                                      )
+                                  )
+                              ),
+                              SizedBox(height: 10),
+                              new Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: <Widget>[
+                                  _isNowRecording == true? Row(
+                                      mainAxisAlignment: MainAxisAlignment.start,
+                                      children: <Widget>[
+                                        Material(
+                                            type: MaterialType.transparency,
+                                            child:Align(
+                                                alignment: Alignment.bottomRight,
+                                                child: Text(
+                                                    _distressCallRequestStatus,
+                                                    textAlign: TextAlign.justify,
+                                                    style:TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 14.0
+                                                    )
+                                                )
+                                            )
+                                        ),
+                                      ]
+                                  ):
+                                  Row(
+                                      mainAxisAlignment: MainAxisAlignment.start,
+                                      children: <Widget>[
+                                        Image.asset(
+                                          'lib/app/assets/distress_screen_icon.png',
+                                          height: 70.0,
+                                          width: 70.0,
+                                        ),
+                                        Material(
+                                            type: MaterialType.transparency,
+                                            child:Align(
+                                                alignment: Alignment.bottomRight,
+                                                child: Text(
+                                                    _distressCallRequestStatus,
+                                                    textAlign: TextAlign.justify,
+                                                    style:TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 16.0
+                                                    )
+                                                )
+                                            )
+                                        ),
+                                      ]
+                                  ),
+                                ],
+
+                              ),
+                              new Padding(padding: EdgeInsets.symmetric(vertical: 25.0)),
+                            ],
+                          ),
                         )
                       )
                     ),
@@ -1031,7 +1314,7 @@ class _DistressAlertScreenState extends State<DistressAlertScreen> {
                 SizedBox(height: _screenHeight*0.25),
                 new Align(
                   alignment: FractionalOffset.bottomRight,
-                  
+
                   child: new RaisedButton(
                     shape: CircleBorder(),
                     color: Color(0xFF00FF64),
@@ -1044,7 +1327,8 @@ class _DistressAlertScreenState extends State<DistressAlertScreen> {
                     }
                   )
                 )
-              ])
+              ]
+              ),
             ) : new Container(height: 0.0, width: 0.0),
             _canShowMarkedSafeOverlay ? Container(
               height: double.infinity,
@@ -1067,7 +1351,7 @@ class _DistressAlertScreenState extends State<DistressAlertScreen> {
                             width: 120.0,
                             height: 120.0,
                             child: InkWell(
-                            
+
                               child: null
                             )
                           )

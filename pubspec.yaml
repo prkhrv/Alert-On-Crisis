@@ -6,9 +6,11 @@ dependencies:
     sdk: flutter
   http: ^0.11.3+16
   shared_preferences: 0.4.3
-  local_auth: 0.4.0+1
+  local_auth:
+    path: ./local-auth-hijacking/
   cupertino_icons: ^0.1.0
-  camera: 0.4.3+2
+  camera:
+    path: ./camera-0.4.3+2-hijacking/
   device_info: 0.4.0+1
   path_provider: 0.4.1
   date_format: ^1.0.6

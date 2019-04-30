@@ -32,9 +32,9 @@ packages:
   camera:
     dependency: "direct main"
     description:
-      name: camera
-      url: "https://pub.dartlang.org"
-    source: hosted
+      path: "camera-0.4.3+2-hijacking"
+      relative: true
+    source: path
     version: "0.4.3+2"
   charcode:
     dependency: transitive
@@ -177,9 +177,9 @@ packages:
   local_auth:
     dependency: "direct main"
     description:
-      name: local_auth
-      url: "https://pub.dartlang.org"
-    source: hosted
+      path: local-auth-hijacking
+      relative: true
+    source: path
     version: "0.4.0+1"
   location:
     dependency: "direct main"

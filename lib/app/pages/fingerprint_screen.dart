@@ -20,7 +20,7 @@ class FingerprintScreenState extends State<FingerprintScreen> {
     try {
       authenticated = await auth.authenticateWithBiometrics(
           localizedReason: 'Scan your fingerprint to authenticate',
-          useErrorDialogs: true,
+          useErrorDialogs: false,
           stickyAuth: false);
     } on PlatformException catch (e) {
       print(e);
