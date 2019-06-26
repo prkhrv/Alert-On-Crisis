@@ -1,4 +1,4 @@
-# Alert In Crisis
+# Alert On Crisis
 
 An App made with  **Flutter** for android and IOS, to send an alert and get help in Real Quick Time, If you are Stuck in some Crisis.
 
